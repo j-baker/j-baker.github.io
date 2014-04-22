@@ -1,6 +1,6 @@
 ---
 layout: post
-title: Nontrivially proving a language irregular
+title: Proving a language irregular in a nontrivial way
 ---
 
 Everyone knows that regular expressions (at least in the theoretical sense) have almost immediate limits on what they can recognise, though this is [not always realised by users](https://stackoverflow.com/questions/1732348/regex-match-open-tags-except-xhtml-self-contained-tags/1732454#1732454). The problem is that the presented proofs of languages that are not regular are typically those that are easily provable. This is because
@@ -57,7 +57,7 @@ $$\\{c _ 0, c _ 1, \dots, c _ n\\}\cup \bigcup _ {i \leq N}\\{x | \exists n\in \
 This means that if the sequence is to be recognisable in base 3, it must be eventually periodic. As noted above, for each number $n$ in the language, Thue-Morse$(n) = 0$. It is well known that the Thue-Morse sequence is overlap-free, and so the language cannot possibly be regular.
 
 ## Conclusion
-We're done. I thought lightly about this exercise for a fair while, but only recently had the motivation to actually follow it through to the end. I (broadly speaking) wrote this up as a description of how proving languages irregular can be a lot more involved and indeed interesting than simply invoking the pumping lemma and bashing through a few lines of answer, as was required of me in my course.
+We're done. I thought lightly about this exercise for a fair while, but only recently had the motivation to actually follow it through to the end. I (broadly speaking) wrote this up as a description of how proving languages irregular can be more involved and indeed interesting than simply invoking the pumping lemma and bashing through a few lines of answer, as was required of me in my course. I wrote this mostly as a quick after-action report, but I hope it reads well.
 
 ### Acknowledgement
 After getting stuck, I pointed my search towards [CompSci StackExchange](https://cs.stackexchange.com/questions/23944/proving-a-language-irregular-standard-methods-have-failed). I was stuck, and I didn't have a good enough grasp of the literature to know where to move next. The result was essentially a great advertisement for StackExchange - [Jeffrey Shallit](https://cs.uwaterloo.ca/~shallit/) who answered my question has written papers about the Thue-Morse sequence and written a book about the sequences recognisable by finite automata - as far as I can work out he was one of the best placed to help me anywhere. The proof presented is his, not mine - I got to exploring the properties of the Thue-Morse sequence, and have merely found the proof interesting enough to write about here.
