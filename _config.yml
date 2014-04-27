@@ -19,6 +19,7 @@ paginate:         5
 
 # Custom vars
 version:          1.0.0
+domain:           jbaker.io
 
 # github:
 repo:           https://github.com/j-baker/j-baker.github.io
