@@ -1,0 +1,3 @@
+[submodule "KudosPlease"]
+	path = KudosPlease
+	url = git@github.com:TimPietrusky/KudosPlease.git
