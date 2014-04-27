@@ -23,4 +23,5 @@ version:          1.0.0
 # github:
 repo:           https://github.com/j-baker/j-baker.github.io
 
-exclude:        ['KudosPlease']
+# exclude:        ['KudosPlease']
+# include:        ['KudosPlease/css/kudosplease.css', 'KudosPlease/js/kudosplease.js']
