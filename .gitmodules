@@ -1,3 +1,6 @@
 [submodule "KudosPlease"]
 	path = KudosPlease
 	url = https://github.com/TimPietrusky/KudosPlease.git 
+[submodule "MathJax"]
+	path = MathJax
+	url = git@github.com:mathjax/MathJax.git
