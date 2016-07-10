@@ -3,7 +3,7 @@ layout: post
 title: Some quick Git tips
 ---
 
-If you want to save yourselves some time when using Git, try making a
+If you want to save yourself some time when using Git, try making a
 few changes to your `.gitconfig`.
 
 My current non-default recommendations are:
