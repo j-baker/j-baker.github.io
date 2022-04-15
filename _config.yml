@@ -17,6 +17,7 @@ author:
   name:           'James Baker'
   url:            https://www.github.com/j-baker
 
+plugins: [jekyll-paginate]
 paginate:         5
 
 # Custom vars
