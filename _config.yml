@@ -24,6 +24,3 @@ domain:           jbaker.io
 
 # github:
 repo:           https://github.com/j-baker/j-baker.github.io
-
-# exclude:        ['KudosPlease']
-# include:        ['KudosPlease/css/kudosplease.css', 'KudosPlease/js/kudosplease.js']
