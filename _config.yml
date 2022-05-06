@@ -7,9 +7,9 @@ permalink:        pretty
 
 # Setup
 title:            James Baker
-tagline:          'bits and bobs'
-description:      'Ramblings of a young, naïve and inexperienced computer scientist/software engineer.'
-url:              http://jbaker.io
+tagline:          ''
+description:      "James Baker's Blog."
+url:              http://www.jbaker.io
 
 author:
   name:           'James Baker'
