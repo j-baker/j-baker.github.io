@@ -292,7 +292,7 @@ class Simulation {
 }
 ```
 
-We can build on this primitive by adding a notion of a 'delay distribution' to add an interleaving to different tasks (for internal code, possibly on the order of microseconds, for RPCs milliseconds) and implementing derived primitives, for example executor services. As one example, one could implement an equivalent to `Thread.sleep` using a `CountDownLatch`.
+We can build on this primitive by adding jitter to execution (configurable by the place in the code the jitter is triggered from) to interleave different concurrently schedulable tasks (for internal code, possibly on the order of microseconds, for RPCs milliseconds) and implementing derived primitives, for example executor services. As one example, one could implement an equivalent to `Thread.sleep` using a `CountDownLatch`.
 
 ```java
 void sleep(Duration duration) throws InterruptedException {
@@ -329,8 +329,6 @@ public interface StoreManager {
   }
 }
 ```
-
-Dynamic checks can be used to ensure that methods on the server state are not called when in the remote context, where the lock is not held. A good example of this model in use might be related to the heartbeating logic.
 
 Enabling the simulation requires a couple of specific instrumentation actions, which I exposed for test substitution in a `LanguageRuntime` interface.
 
