@@ -40,7 +40,7 @@ They could now write deterministic tests of their system, similarly to the Jepse
 
 Once the team had built their simulation of a database, they could swap out their mocks for the real thing, writing the adapters from their interfaces to the various underlying operating system calls. At this point, they could run the same tests in a way similar to Jepsen (my understanding was that a small fleet of servers, programmable switches and power supplies was used). These real-hardware re-runs could be used to ensure that the simulation matched the real world, since any failure not seen in the simulation naturally corresponds to a deficiency in the simulation.
 
-Once the team was satisfied with their simulation, they had a database they could sell!
+Once satisfied with their simulation, they had a database they could sell!
 
 I've heard that this was beneficial to the company in a number of ways, but the one that caught my eye can be paraphrased as 'because we had very high confidence in the correctness of our code and the changes we were making to it, we could be much more aggressive with regards to the technical architecture of the system[^1]'.
 
@@ -59,22 +59,7 @@ Future<String> task = executor.submit(() -> {
 If the `ExecutorService` involved is backed by multiple operating system threads, then the task will not be executed in
 a deterministic fashion because the operating system task scheduler is not pluggable. If instead it is backed by a single operating system thread, it will deadlock.
 
-An alternative approach might be to use Promises/ListenableFutures/callbacks.
-
-```java
-ListeningExecutorService executor = MoreExecutors.listeningDecorator(createExecutorService());
-ListenableFuture<String> task = Futures.submitAsync(() -> {
-   ListenableFuture<String> concurrentComputation = executor.submit(this::doExpensiveComputation);
-   String ourResult = doExpensiveComputation2();
-   return Futures.transform(
-    concurrentComputation,
-    result -> ourResult + result,
-    MoreExecutors.directExecutor());
-}, executor);
-```
-This approach can be more easily made deterministic by using a specific Executor implementation, but there is high syntactic overhead, and we may well lose the optionality of execution order. For example, the above code when executed deterministically will always run `doExpensiveComputation2` before `doExpensiveComputation`. Many languages offer syntactic sugar for this in the form of async-await control flow. In these cases, it's uncommon to be able to control execution due to the implementation of the construct, so we have the same problem as the multi-threaded approach.
-
-An asynchronous implementation can be viable in isolated areas. Palantir's [Dialogue](https://github.com/palantir/dialogue/) uses this model to implement an RPC library. By utilizing an asynchronous implementation and using a [deterministic scheduler](https://github.com/palantir/dialogue/tree/develop/simulation/src/main/java/com/palantir/dialogue/core) (as well as swapping out the underlying Apache HTTP client for a stub implementation), they can easily simulate the load balancing logic and generate predictions of how well different algorithms handle different cases, producing [pretty charts of the results](https://github.com/palantir/dialogue/blob/develop/simulation/src/test/resources/slow_503s_then_revert%5BCONCURRENCY_LIMITER_ROUND_ROBIN%5D.png) which can be posted to pull requests each time they change. This had a side effect - by measuring the runtime of the simulation, one can get a good understanding of the CPU overheads of the library and optimize the runtime against this. In some ways this is similar to [SQLite's approach to CPU optimization](https://www.sqlite.org/draft/cpu.html). More broad usage of the model can easily become unwieldy[^2].
+An alternative approach might be to use an asynchronous implementation, using `Listenable/CompletableFutures`, `Promises`, etc. Here, we don't block on another task, but use callbacks to move state. Palantir's [Dialogue](https://github.com/palantir/dialogue/) uses this model to implement an RPC library. By utilizing an asynchronous implementation and using a [deterministic scheduler](https://github.com/palantir/dialogue/tree/develop/simulation/src/main/java/com/palantir/dialogue/core) (as well as swapping out the underlying Apache HTTP client for a stub implementation), they can easily simulate the load balancing logic and generate predictions of how well different algorithms handle different cases against differently unperformant servers, producing [pretty charts of the results](https://github.com/palantir/dialogue/blob/develop/simulation/src/test/resources/slow_503s_then_revert%5BCONCURRENCY_LIMITER_ROUND_ROBIN%5D.png) which can be posted to pull requests each time they change. This had a side effect - by measuring the runtime of the simulation, one can get a good understanding of the CPU overheads of the library and optimize the runtime against this. In some ways this is similar to [SQLite's approach to CPU optimization](https://www.sqlite.org/draft/cpu.html). More broad usage of the model can easily become unwieldy[^2].
 
 FoundationDB's usage of this model required them to build their own programming language, [Flow](https://apple.github.io/foundationdb/flow.html), which is transpiled to C++. The simulation model therefore infects the entire codebase and places large constraints on dependencies, which makes it a difficult choice.
 
