@@ -3,8 +3,7 @@ layout: post
 title: Using Java's Project Loom to build more reliable distributed systems
 ---
 
-Building distributed databases is very difficult. There are lots of clever ideas you can put into a distributed database, but making the ideas work well together in a real system can be very challenging because different decompositions of the same problem can massively affect how difficult it is to solve, and bugs are typically both subtle and hard to detect. This is especially problematic as the system evolves, where it can be difficult to
-understand whether an improvement helps or hurts.
+Building distributed databases is very difficult. There are lots of clever ideas you can put into a distributed database, but making the ideas work well together in a real system can be very challenging because different decompositions of the same problem can massively affect how difficult it is to solve, and bugs are typically both subtle and hard to detect. This is especially problematic as the system evolves, where it can be difficult to understand whether an improvement helps or hurts.
 
 With Jepsen and FoundationDB I've seen two particularly interesting mechanisms of testing that distributed systems maintain the properties they claim to hold, and Java's Project Loom should enable a hybrid approach that gains the most of the benefits of both without the costs.
 
@@ -14,13 +13,13 @@ Jepsen is a software framework and blog post series which attempts to find bugs 
 material, and should the results violate the invariants, one has cast iron evidence of a bug. As a comparative tool,
 the results speak for themselves. In the early days, many fanciful claims made by database companies bit the dust, and more recently contracting Kyle Kingsbury to stress your database has become something of a rite of passage.
 
-![jepsen](assets/images/jepsen.jpg){: width="100%" }
+![jepsen](/assets/images/jepsen.jpg){: width="100%" }
 
 As a white box tool for bug detection, Jepsen is fantastic. If you've written the database in question, Jepsen leaves something to be desired. By falling down to the lowest common denominator of 'the database must run on Linux', testing is both slow and non-deterministic because most production-level actions one can take are comparatively slow. For a quick example, suppose I'm looking for bugs in Apache Cassandra which occur due to adding and removing nodes. It's usual for adding and removing nodes to Cassandra to take hours or even days, although for small databases it might be possible in minutes, probably not much less than. A Jepsen environment could only run one iteration of the test every few minutes; if the failure case only happens one time in every few thousand attempts, without massive parallelism I might expect to discover issues only every few days, if that. I had an improvement that I was testing out against a Cassandra cluster which I discovered deviated from Cassandra's pre-existing behaviour with (against a production workload) probability one in a billion. Jepsen likely won't help with that.
 
 Suppose that we either have a large server farm or a large amount of time and have detected the bug somewhere in our stack of at least tens of thousands of lines of code. We now have a bug, but no reproduction of said bug. If there is some kind of smoking gun in the bug report or a sufficiently small set of potential causes, this might just be the start of an odyssey.
 
-Jepsen is probably the best known example of this type of testing, and it certainly moved the state of the art; most database authors have similar suites of tests. ScyllaDB documents their testing strategy [here](https://www.scylladb.com/product/technology/scylla-testing/) and while the styles of testing might vary, the strategies are similar.
+Jepsen is probably the best known example of this type of testing, and it certainly moved the state of the art; most database authors have similar suites of tests. ScyllaDB documents their testing strategy [here](https://www.scylladb.com/product/technology/scylla-testing/) and while the styles of testing might vary between different vendors, the strategis have mostly coalesced around this approach.
 
 Jepsen is limited here by its broadness. As the author of the database, we have much more access to the database if we so desire, as shown by [FoundationDB](https://www.foundationdb.org/).
 
@@ -32,7 +31,7 @@ I highly recommend watching the talk, but here follows a brief summary.
 
 When the FoundationDB team set out to build a distributed database, they didn't start by building a distributed database. Instead, they built a _deterministic simulation_ of a distributed database. They built mocks of networks, filesystems, hosts, which all worked similarly to those you'd see in a real system but with simulated time and resources allowing injection of failures.
 
-![fdb](assets/images/fdb.jpg){: width="100%" }
+![fdb](/assets/images/fdb.jpg){: width="100%" }
 
 They could now write deterministic tests of their system, similarly to the Jepsen tests, except for two key differences:
 
@@ -45,7 +44,7 @@ Once the team was satisfied with their simulation, they had a database they coul
 
 I've heard that this was beneficial to the company in a number of ways, but the one that caught my eye can be paraphrased as 'because we had very high confidence in the correctness of our code and the changes we were making to it, we could be much more aggressive with regards to the technical architecture of the system[^1]'.
 
-![fdb-pyramid](assets/images/fdb-pyramid.jpg){: width="100%" }
+![fdb-pyramid](/assets/images/fdb-pyramid.jpg){: width="100%" }
 
 One problem with this approach is that it makes a huge technical tradeoff - programming languages and operating system concepts typically do not make it easy to solve problems using this mechanic because large parts of the system are not naturally controllable in a deterministic way. Let's use a simple Java example, where we have a thread that kicks off some concurrent work, does some work for itself, and then waits for the initial work to finish.
 
@@ -92,7 +91,7 @@ It's typical to test the consistency protocols of distributed systems via random
 
 Java's Project Loom considerably shakes up this tradeoff.
 
-![spectrum](assets/images/spectrum.jpg){: width="100%" }
+![spectrum](/assets/images/spectrum.jpg){: width="100%" }
 
 # Project Loom
 
@@ -127,7 +126,7 @@ class BrokenMemoizingSupplier<T> implements Supplier<T> {
   private final Lock lock;
   private final Supplier<T> delegate;
   private volatile boolean initialized = false;
-  private T value;
+  private volatile T value;
 
   BrokenMemoizingSupplier(Supplier<T> delegate) {
     this(new ReentrantLock(), delegate);
@@ -144,7 +143,7 @@ class BrokenMemoizingSupplier<T> implements Supplier<T> {
     if (!initialized) {
       lock.lock();
       try {
-        // This code is broken because initialized may have changed between its check before the // call to 'lock' and now.
+        // This code is broken because initialized may have changed between its check before the call to 'lock' and now.
         T result = delegate.get();
         value = result;
         initialized = true;
@@ -228,7 +227,20 @@ This test is highly limited as compared to a tool like [jcstress](https://shipil
 
 Loom offers the same simulation advantages of FoundationDB's Flow language (Flow has other features too, it should be noted) but with the advantage that it works well with almost the entire Java runtime. This means that idiomatic Java (or other JVM languages like Kotlin, Scala or presumably eventually anything that works on GraalVM) fits in well, and the APIs that Loom exposes[^3] makes it straightforward to experiment with this kind of approach. This significantly broadens the scope for FoundationDB like implementation patterns, making it much easier for a large class of software to utilize this mechanism of building and verifying distributed systems.
 
-Generally, what seems new and exciting is the richness of ecosystem which comes with the functionality.
+What one could do is the following:
+
+1. Start by building a simulation of core Java primitives (concurrency/threads/locks/caches, filesystem access, RPC). Implement the ability to insert delays, errors in the results as necessary. The simulations could be high or low level. One could implement a simulation of core I/O primitives like `Socket`, or a much higher level primitive like a gRPC unary RPC[^4].
+1. As you build your distributed system, write your tests using the simulation framework.
+    - For shared datastructures that see accesses from multiple thread, one could write unit tests which check that properties are maintained using the framework. 
+    - Subsystems could be tested in isolation against the simulation (for example, the storage backend could be tested against a simulation of a filesystem).
+    - And then the integration of the system could also be tested against the simulation.
+1. Sufficiently high level tests would be run against the real system as well, with any unobserved behaviours or failures that cannot be replicated in the simulation the start of a refining feedback loop.
+1. Run tests continuously, using a server farm to accelerate the rate of test execution, different runs starting on different seeds; flag failures for diagnosis.
+2. Over time, refine the infrastructure. For unit test type simulations, perhaps try to find all topological sorts of triggered futures  or otherwise try to understand different dependencies (control flow, data, etc) between different tasks. For acceptance test style simulation, probably try to accelerate the feedback loop of what to do when a test fails; perhaps re-run the test up to a few minutes before so that a human can attach a debugger at a relevant point, snapshot state, etc etc. Start looking for 'smoke', large memory allocations or slowdowns that might not influence correctness.
+
+Because Java's implementation of virtual threads is so general, one could also retrofit the system onto their pre-existing system. A loosely coupled system which uses a ['dependency injection' style](https://www.martinfowler.com/articles/injection.html) for construction where different subsystems can be replaced with test stubs as necessary would likely find it easy to get started (similarly to writing a new system). A tightly coupled system which uses lots of static singletons would likely need some refactoring before the model could be attempted.
+
+My main claim is that the team that follows this path would find themselves to have commercial advantages over a more traditionally tested database. Historically, what I've seen is that confidence must be paid for - testing infra for distributed systems can be extremely expensive to maintain; infra becomes outdated, the software evolves, the infra becomes unrepresentative, flakes must be understood and dealt with promptly. These costs are particularly high for distributed systems. Loom-driven simulations make much of this far simpler.
 
 ## Usage in a real database (Raft)
 
@@ -292,77 +304,16 @@ class Simulation {
 }
 ```
 
-We can build on this primitive by adding jitter to execution (configurable by the place in the code the jitter is triggered from) to interleave different concurrently schedulable tasks (for internal code, possibly on the order of microseconds, for RPCs milliseconds) and implementing derived primitives, for example executor services. As one example, one could implement an equivalent to `Thread.sleep` using a `CountDownLatch`.
-
-```java
-void sleep(Duration duration) throws InterruptedException {
-  CountDownLatch latch = new CountDownLatch(1);
-  enqueue(duration, latch::countDown);
-  latch.await();
-}
-```
-
-Certain parts of the system need some closer attention. For example, there are many potential failure modes for RPCs that must be considered; network failures, retries, timeouts, slowdowns etc; we can encode logic that accounts for a realistic model of this.
+Other primitives (such as RPC, thread sleeps) can be implemented in terms of this. Certain parts of the system need some closer attention. For example, there are many potential failure modes for RPCs that must be considered; network failures, retries, timeouts, slowdowns etc; we can encode logic that accounts for a realistic model of this.
 
 For the actual Raft implementation, I follow a thread-per-RPC model, similar to many web applications. My application has HTTP endpoints (via Palantir's [Conjure](https://github.com/palantir/conjure) RPC framework) for implementing the Raft protocol, and requests are processed in a thread-per-RPC model similar to most web applications. Local state is held in a store (which multiple threads may access), which for purposes of demonstration is implemented solely in memory. In a production environment, there would then be two groups of threads in the system.
 
-![server](assets/images/server.jpg){: width="100%" }
+![server](/assets/images/server.jpg){: width="100%" }
 
 1. Request threads (one per request, probably pooled). These access the store and mutate state in response to the requirements of the paper, they can be thought of as similar to any other HTTP API backed by a key-value store.
 2. Leadership thread (singleton). This processes the leadership state machine in response to timeouts. For simplicity, you can think of it as implementing 'If the leader didn't heartbeat us in the last X time, try to become the leader. If we're the leader, make sure the other nodes are up to date with us'. 
 
-The core operations in Raft are of two forms. Some operations can be thought of a solely local - a request is received, processing this request does some reads from and writes to the store, and the response is returned. An example of this might be processing an `AppendEntries` request. Some operations on the other hand involve making RPCs to other servers (for example, processing a user's command, or trying to become leader), and these are all of the form 'preprocess with local store, make remote calls, postprocess with local store'. For this reason, I chose a simple but flexible store model whereby accessing the store requires a global lock, but should an RPC be required this lock can be temporarily released and then reacquired as the remote operation terminates ends. To ensure that the lock is acquired and released appropriately, I protected the store with a `StoreManager` transaction manager style layer.
-
-```java
-public interface StoreManager {
-  <R> R call(Function<Ctx, R> task);
-
-  void run(Consumer<Ctx> task);
-
-  interface Ctx {
-    ServerState state();
-
-    /* Release lock before running the runnable, reacquires before returning */
-    void runRemote(Runnable task);
-
-    <R> R callRemote(Supplier<R> task);
-  }
-}
-```
-
-Enabling the simulation requires a couple of specific instrumentation actions, which I exposed for test substitution in a `LanguageRuntime` interface.
-
-```java
-public interface LanguageRuntime {
-  Clock clock();
-
-  void sleep(Duration duration);
-
-  Lock newLock();
-
-  final class ProductionLanguageRuntime implements LanguageRuntime {
-    @Override
-    public Clock clock() {
-      return Clock.systemUTC();
-    }
-
-    @Override
-    public void sleep(Duration duration) {
-      try {
-        Thread.sleep(duration);
-      } catch (InterruptedException e) {
-        Thread.currentThread().interrupt();
-        throw new RuntimeException(e);
-      }
-    }
-
-    @Override
-    public Lock newLock() {
-      return new ReentrantLock();
-    }
-  }
-}
-```
+Any standard methods that needed to be simulated (like `Clock`s) were replacable with test doubles.
 
 The bulk of the Raft implementation can be found in [RaftResource](https://github.com/j-baker/loom-experiments/blob/0.0.1/loom-experiments-core/src/main/java/io/jbaker/loom/raft/resource/RaftResource.java), and the bulk of the simulation in [DefaultSimulation](https://github.com/j-baker/loom-experiments/blob/0.0.1/loom-experiments-core/src/test/java/io/jbaker/loom/raft/simulation/DefaultSimulation.java). The store sadly goes against my usual good code principles by heavily using setter methods, but this kept the implementation brief.
 
@@ -417,31 +368,6 @@ private static final class CorrectnessValidator implements Hooks {
         SafeArg.of("newLeader", leader));
   }
 
-  public void validateLogMatchingProperty(List<StoreManager> storeManagers) {
-    List<List<LogEntry>> allLogs = storeManagers.stream()
-        .map(store -> store.call(
-            ctx -> List.copyOf(ctx.state().getPersistent().getLog())))
-        .toList();
-    nChoose2(allLogs).forEach(entry -> {
-      List<LogEntry> left = entry.getKey();
-      List<LogEntry> right = entry.getValue();
-
-      for (int k = Math.min(left.size(), right.size()) - 1; k >= 0; k--) {
-        if (left.get(k).getTerm().equals(right.get(k).getTerm())) {
-          checkState(
-              left.subList(0, k + 1).equals(right.subList(0, k + 1)),
-              "log matching property was not maintained");
-          break;
-        }
-      }
-    });
-  }
-
-  private static <T> Stream<Entry<T, T>> nChoose2(List<T> list) {
-    return IntStream.range(0, list.size()).boxed().flatMap(i -> IntStream.range(i + 1, list.size())
-        .mapToObj(j -> Map.entry(list.get(i), list.get(j))));
-  }
-
   public StateMachine newStateMachine() {
     return new StateMachine() {
       private LogIndex currentIndex = LogIndexes.ZERO;
@@ -483,3 +409,4 @@ I've found Jepsen and FoundationDB to apply two similar in idea but different in
 [^1]: This rang true for me, since I've seen even small bugs in complex systems cause outsized debugging pain and issues in production. One example here might be HTTP/2 implementations; every web-app level implementation of HTTP/2 I've seen (in OkHTTP, Undertow, Jetty, Go) has eventually caused issues in production due to subtle bugs in connection management state machines.
 [^2]: More sophisticated implementations can easily become unwieldy. I briefly experimented with an implementation of Palantir's transactional key-value store AtlasDB in such a style early on in 2020 in some free time. While I eventually had something that worked, the code I had written was unfortunately inefficient, [inscrutable](https://github.com/palantir/atlasdb/blob/jbaker/new/atlasdb-new/src/main/java/com/palantir/atlasdb/v2/api/transaction/scanner/ReadCommittedDataReader.java#L51), and disastrous to debug, since a stack trace 10 elements deep might instead become 10 anonymous runnables in an executor.
 [^3]: Loom does not _strictly_ have pluggable schedulers. The API was dropped for the preview release [here](https://github.com/openjdk/loom/commit/cad26ce74c98e28854f02106117fe03741f69ba0), but based on documentation is a clear design goal of the project and reflection re-establishes the desired behaviour.
+[^4]: My bias would be that when the failure modes of a given piece of code can be well understood and separately tested, the simulation should be kept high level so as to ensure some modularity and good performance, or otherwise to implement at both levels and to choose the most appropriate one at time of usage (e.g. use the simulation of a socket for RPC testing, use the simulation of the RPC for server testing).
