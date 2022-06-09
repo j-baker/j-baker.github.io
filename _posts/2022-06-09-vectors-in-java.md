@@ -3,7 +3,7 @@ layout: post
 title: Vectorized sorting in Java - down a rabbit hole to a modified JVM
 ---
 
-In this post I explain a little about how to use Java's Vector APIs, attempt to explain how they turn out fast, and then use them to implement a performant sorting algorithm. I then explain some problems I found, and how I resolved them. Supporting code is published [here](https://github.com/j-baker/vector-experiments).
+In this post I explain a little about how to use Java's Vector APIs, attempt to explain how they turn out fast, and then use them to implement a sorting algorithm 3x faster than `Arrays.sort`. I then explain some problems I found, and how I resolved them. Supporting code is published [here](https://github.com/j-baker/vector-experiments).
 
 I'm an occasional reader of [Daniel Lemire's blog](https://lemire.me). Many of his posts follow a standard pattern, where he takes some standard operation (json parsing, bitsets, existence filters, sorting, integer encoding), reforms it using vector operations and makes it vastly faster due to increasing the data level parallelism. It's a fun read, and the numbers are scary high (most of us can only dream of writing code that processes 1GB/sec with a single core, let alone doing something useful in that time).
 
