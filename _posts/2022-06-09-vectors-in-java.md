@@ -1,13 +1,11 @@
 ---
 layout: post
-title: SIMD sorting in Java - quicksort, JVM modification, 3x improvement over `Arrays.sort`
+title: SIMD accelerated sorting in Java - how it works and what it took
 ---
 
 In this post I explain a little about how to use Java's Vector APIs, attempt to explain how they turn out fast, and then use them to implement a sorting algorithm 3x faster than `Arrays.sort`. I then explain some problems I found, and how I resolved them. Supporting code is published [here](https://github.com/j-baker/vector-experiments).
 
-I'm an occasional reader of [Daniel Lemire's blog](https://lemire.me). Many of his posts follow a standard pattern, where he takes some standard operation (json parsing, bitsets, existence filters, sorting, integer encoding), reforms it using vector operations and makes it vastly faster due to increasing the data level parallelism. It's a fun read, and the numbers are scary high (most of us can only dream of writing code that processes 1GB/sec with a single core, let alone doing something useful in that time).
-
-I work at a Java shop and so most of these techniques have ended up being somewhat out of scope for me, because historically Java didn't provide much support for vectorization. Traditional Java has skewed heavily towards scalar code, with some very limited automatic vectorization in toy cases which you won't ever notice in practice, and a number of hand-rolled vectorized intrinsics on core types to ensure the quality of the standard library (look for `@IntrinsicCandidate` in types like `Latin1String`). I've certainly faced problems that would have benefitted from vectorization, but avoided the solution due to not wanting to go through the overhead of building, testing, and distributing a cross-platform JNI library.
+I'm an occasional reader of [Daniel Lemire's blog](https://lemire.me). Many of his posts follow a standard pattern, where he takes some standard operation (json parsing, bitsets, existence filters, sorting, integer encoding), reforms it using vector operations and makes it vastly faster due to increasing the data level parallelism. It's a fun read, and the numbers are scary high (most of us can only dream of writing code that processes 1GB/sec with a single core, let alone doing something useful in that time). Especially not in Java, where scalar code has usually been the only practical option in most cases.
 
 There's an ongoing OpenJDK project called [Project Panama](https://openjdk.java.net/projects/panama/) which has been working on improving interop between the JVM and more 'native' APIs. One of their subprojects has focused on providing vectorized intrinsics within the JVM, and I decided to test out these APIs by trying to use them to implement sorting on integer arrays. Given there was a [recent Google blogpost on a similar topic](https://opensource.googleblog.com/2022/06/Vectorized%20and%20performance%20portable%20Quicksort.html), it seems like a good comparison point. 
 
