@@ -1,6 +1,6 @@
 ---
 layout: post
-title: SIMD accelerated sorting in Java - how it works and what it took
+title: SIMD accelerated sorting in Java - how it works and why it was 3x faster
 ---
 
 In this post I explain a little about how to use Java's Vector APIs, attempt to explain how they turn out fast, and then use them to implement a sorting algorithm 3x faster than `Arrays.sort`. I then explain some problems I found, and how I resolved them. Supporting code is published [here](https://github.com/j-baker/vector-experiments).
