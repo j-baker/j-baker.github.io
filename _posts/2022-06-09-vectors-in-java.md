@@ -68,11 +68,11 @@ When we inline a method, we are replacing a function call to that method with th
 
 ```java
 boolean notInlined(String string) {
-    return string1.isEmpty() || string1.length() == 1;
+    return string.isEmpty() || string.length() == 1;
 }
 
 boolean inlined(String string) {
-    return string1.value.length == 0 || string1.value.length == 1;
+    return string.value.length == 0 || string.value.length == 1;
 }
 ```
 
